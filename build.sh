@@ -6,14 +6,14 @@
 # Init
 KERNEL_DIR="${PWD}"
 KERN_IMG="${KERNEL_DIR}"/out/arch/arm64/boot/Image.gz
-KERN_DTB_NONTB="${KERNEL_DIR}"/out/arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-tissot-nontreble.dtb
-KERN_DTB_TB="${KERNEL_DIR}"/out/arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-tissot-treble.dtb
+KERN_DTB_NONTB="${KERNEL_DIR}"/out/arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-tiffany-nontreble.dtb
+KERN_DTB_TB="${KERNEL_DIR}"/out/arch/arm64/boot/dts/qcom/msm8953-qrd-sku3-tiffany-treble.dtb
 ANYKERNEL="${HOME}"/anykernel
 
 # Repo URL
 CLANG_REPO="https://github.com/silont-project/silont-clang.git"
-ANYKERNEL_REPO="https://github.com/Busetdah/AnyKernel3.git"
-ANYKERNEL_BRANCH="tissot"
+ANYKERNEL_REPO="https://github.com/laityts/AnyKernel3.git"
+ANYKERNEL_BRANCH="tiffany"
 
 # Compiler
 CLANG_DIR="$HOME/proton-clang"
@@ -24,20 +24,19 @@ fi
 # git clone https://github.com/baalajimaestro/arm-maestro-linux-gnueabi.git -b 07032020-9.2.1 --depth=1 "${KERNEL_DIR}/gcc32"
 
 # Defconfig
-DEFCONFIG="tissot_defconfig"
+DEFCONFIG="tiffany_defconfig"
 REGENERATE_DEFCONFIG="true" # unset if don't want to regenerate defconfig
 
 # Costumize
 KERNEL="SiLonT"
-DEVICE="Tissot"
+DEVICE="Tiffany"
 KERNELTYPE="4.9-Q-Rebase"
 KERNELNAME="${KERNEL}-${DEVICE}-${KERNELTYPE}-$(TZ=Asia/Jakarta date +%y%m%d-%H%M)"
 TEMPZIPNAME="${KERNELNAME}-unsigned.zip"
 ZIPNAME="${KERNELNAME}.zip"
 
 # Telegram
-CHATIDQ="-425671460"
-CHATID="-1001276955142" # Group/channel chatid (use rose/userbot to get it)
+CHATID="" # Group/channel chatid (use rose/userbot to get it)
 TELEGRAM_TOKEN="" # Get from botfather
 
 # Export Telegram.sh
@@ -75,14 +74,14 @@ makekernel() {
     if [[ "${REGENERATE_DEFCONFIG}" =~ "true" ]]; then
         regenerate
     fi
-    make -j$(nproc --all) CC=clang CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- O=out ARCH=arm64
+    make -j$(nproc --all) CC=clang CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- O=out ARCH=arm64 2>&1 | tee build.log
 
 # Check If compilation is success
     if ! [ -f "${KERN_IMG}" ]; then
-	    END=$(TZ=Asia/Jakarta date +"%s")
+	    END=$(date +"%s")
 	    DIFF=$(( END - START ))
 	    echo -e "Kernel compilation failed, See buildlog to fix errors"
-	    tg_cast "Build for ${DEVICE} <b>failed</b> in $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)! Check Instance for errors @ThisIsTag"
+	    tg_cast "Build for ${DEVICE} <b>failed</b> in $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)! Check Instance for errors @Eytan_tan"
 	    exit 1
     fi
 }
@@ -97,9 +96,9 @@ packingkernel() {
     	mkdir "${ANYKERNEL}"/kernel/
         cp "${KERN_IMG}" "${ANYKERNEL}"/kernel/Image.gz
         mkdir "${ANYKERNEL}"/dtb-nontreble/
-        cp "${KERN_DTB_NONTB}" "${ANYKERNEL}"/dtb-nontreble/msm8953-qrd-sku3-tissot-nontreble.dtb
+        cp "${KERN_DTB_NONTB}" "${ANYKERNEL}"/dtb-nontreble/msm8953-qrd-sku3-tiffany-nontreble.dtb
 	mkdir "${ANYKERNEL}"/dtb-treble/
-        cp "${KERN_DTB_TB}" "${ANYKERNEL}"/dtb-treble/msm8953-qrd-sku3-tissot-treble.dtb
+        cp "${KERN_DTB_TB}" "${ANYKERNEL}"/dtb-treble/msm8953-qrd-sku3-tiffany-treble.dtb
 
     # Zip the kernel, or fail
     cd "${ANYKERNEL}" || exit
@@ -110,7 +109,7 @@ packingkernel() {
     java -jar zipsigner-3.0.jar "${TEMPZIPNAME}" "${ZIPNAME}"
 
     # Ship it to the CI channel
-    "${TELEGRAM}" -f "$ZIPNAME" -t "${TELEGRAM_TOKEN}" -c "${CHATIDQ}"
+    "${TELEGRAM}" -f "$ZIPNAME" -t "${TELEGRAM_TOKEN}" -c "${CHATID}"
 }
 
 # Starting
@@ -118,9 +117,9 @@ tg_cast "<b>STARTING KERNEL BUILD</b>" \
 	"Device: ${DEVICE}" \
 	"Kernel: <code>${KERNEL}, ${KERNELTYPE}</code>" \
 	"Linux Version: <code>$(make kernelversion)</code>"
-START=$(TZ=Asia/Jakarta date +"%s")
+START=$(date +"%s")
 makekernel
 packingkernel
-END=$(TZ=Asia/Jakarta date +"%s")
+END=$(date +"%s")
 DIFF=$(( END - START ))
-tg_cast "Build for ${DEVICE} with ${COMPILER_STRING} <b>succeed</b> took $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)! @ThisIsTag"
+tg_cast "Build for ${DEVICE} with ${COMPILER_STRING} <b>succeed</b> took $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)! @Eytan_Tan"
